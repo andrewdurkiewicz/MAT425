@@ -13,11 +13,11 @@ alpha = 2
 beta  = 2
 
 def p(x):
-    return -1./(x+1)
+    return 0
 def q(x):
-    return 2 + 0*x
+    return 4 + 0*x
 def r(x):
-    return (1-x**2)*np.exp(-x)
+    return -4*x
 
 ## Parameters
 N  = 10-1
