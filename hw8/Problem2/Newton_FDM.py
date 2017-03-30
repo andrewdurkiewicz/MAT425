@@ -28,11 +28,14 @@ a = 0
 b = 1
 alpha = 0
 beta = 0
-N = np.arange(10,110,10)
+exponent = np.arange(1,5)
+N = []
+for i in exponent:
+	N.append(10**(i))
 ysolutions = [[]]*10
 xsolutions = [[]]*10
 tick = 0
-while tick < 10:
+while tick < len(N):
 	x,y = calculate_solution(a,b,alpha,beta,N[tick])
 	yvalues = np.array(y,dtype = object)
 	xvalues = np.array(x,dtype = object)
@@ -40,7 +43,7 @@ while tick < 10:
 	ysolutions[tick] = yvalues
 	xsolutions[tick] = xvalues
 	tick+=1
-plotnumber = np.arange(0,9)
+plotnumber = np.arange(0,len(N))
 for i in plotnumber:
 	plt.plot(xsolutions[i],ysolutions[i])
 	plt.show()
