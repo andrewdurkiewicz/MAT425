@@ -1,56 +1,70 @@
-#!/usr/bin/env/ python3
+#!/usr/bin/python3
+
 import numpy as np
-import matplotlib.pyplot as plt
-def F(y):
-    return np.cos(y)
-def DF(y):
-    return np.diag(-np.sin(y))
-def calculate_solution(a,b,alpha,beta,N):
-	N = N-1
-	dx = (b-a)/(N+1)
-	x  = a+dx*np.arange(1,N+1)
-	iterations = 5
-	yaxis = np.diag(np.ones(N))- np.diag(np.ones(N-1),1) - np.diag(np.ones(N-1),-1)
-	Y = 1+x			
-	L = 2*np.diag(np.ones(N)) - np.diag(np.ones(N-1),1) - np.diag(np.ones(N-1),-1)
-	vecBC = np.zeros(N)
-	vecBC[0] = alpha
-	vecBC[-1] = beta
-	yaxis[0,:] = Y
-	for k in range(iterations):
-	    DJ = L + dx**2*DF(Y)
-	    tp = np.linalg.lstsq(DJ,L.dot(Y) + dx**2*F(Y)- vecBC)
-	    Y  = Y - tp[0]
-	    yaxis[k+1,:] = Y
-	return x,Y
- 
-a = 0
-b = 1
-alpha = 0
-beta = 0
-exponent = np.arange(1,4)
-N = []
-for i in exponent:
-	N.append(10**(i))
-ysolutions = [[]]*10
-xsolutions = [[]]*10
-tick = 0
-while tick < len(N):
-	x,y = calculate_solution(a,b,alpha,beta,N[tick])
-	yvalues = np.array(y,dtype = object)
-	xvalues = np.array(x,dtype = object)
+from matplotlib import pyplot as plt
 
-	ysolutions[tick] = yvalues
-	xsolutions[tick] = xvalues
-	tick+=1
-plotnumber = np.arange(0,len(N))
 
-plt.plot(xsolutions[0],ysolutions[0],label = '$\Delta{x} = 10^{-%d}$' %exponent[0])
-plt.plot(xsolutions[1],ysolutions[1],label = '$\Delta{x} = 10^{-%d}$' %exponent[1])
-plt.plot(xsolutions[2],ysolutions[2],label = '$\Delta{x} = 10^{-%d}$' %exponent[2])
+def derivative_matrix(N):
+    M = np.zeros((N, N))
+    for i in range(N):
+        line = np.array([0] * (i-1) +
+                        [-1] * (i >= 1) +
+                        [2] +
+                        [-1] * (i < N-1) +
+                        [0] * (N - i - 2))
+        M[i] = line
+    return M
 
-plt.title(r'$Finite \/Difference \/Method\/ and \/Newton \/Method\/Approximation \/for \/y^{\prime\prime} = \cos(y)$')
+def derivative(Y, dx):
+    dY = np.zeros(Y.shape)
+    dY[0] = (Y[1] - Y[0]) / dx
+    for i in range(1, len(Y)-1):
+        dY[i] = (Y[i-1] - Y[i+1]) / (2*dx)
+    dY[-1] = (Y[-1] - Y[-2]) / dx
+    return dY
+
+def F(Y, dx):
+    return Y**3 - Y * derivative(Y, dx)
+
+def DF(Y, dx):
+    N = len(Y)
+    DF = np.zeros((N, N))
+    for i, y_i in enumerate(Y):
+        if i > 0:
+            DF[i, i-1] = y_i / (2*dx)
+
+        if i == 0:
+            DF[i, i] = 3 * y_i**2 + (2*y_i - Y[i+1]) / dx
+        elif i == N-1:
+            DF[i, i] = 3 * y_i**2 + (Y[i-1] - 2*y_i) / dx
+        else:
+            DF[i, i] = 3 * y_i**2 - (Y[i+1] - Y[i-1]) / (2*dx)
+
+        if i < N-1:
+            DF[i, i+1] = -1 * y_i / (2*dx)
+    return DF
+plt.figure()
+for k, N in enumerate((1001,)):
+    x0 = 1
+    y0 = 1/2
+    xb = 2
+    yb = 1/3
+    dx = (xb - x0) / (N-1)
+    x_range = np.linspace(x0, xb, N)
+    Y0 = np.zeros(N)
+    Y0[0] = y0
+    Y0[-1] = yb
+    L = derivative_matrix(N)
+    Y = np.ones(N)  
+    for i in range(5):
+        J = L.dot(Y) + dx**2 * F(Y, dx) - Y0
+        DJ = L + DF(Y, dx) * dx**2
+        dY = np.linalg.solve(DJ, J)
+        Y -= dY
+plt.plot(x_range, Y, label='$\Delta x=%.3f$' % dx)
+plt.title(r'$Solution\/ for\/ y^{\prime\prime} \/= \/y ^ {3}-yy^{\prime}$')
 plt.xlabel(r'$x$')
 plt.ylabel(r'$y(x)$')
 plt.legend()
-plt.savefig("Problem_2_Solution_vs_dx.png")
+plt.savefig('Ex3-solution.png')
+

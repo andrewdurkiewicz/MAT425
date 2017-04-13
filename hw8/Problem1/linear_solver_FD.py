@@ -46,11 +46,12 @@ def plot2(x2,error):
 	plt.title(r'$Finite\/ Difference\/ Method\/ Error\/ for \/y^{\prime\prime} = 4(y-x)$')
 	plt.xlabel(r'$x$')
 	plt.ylabel(r'$y(x)$')
+	plt.ylim(0,2)
 	plt.savefig("Problem_1_Error_Autofit.png")
 y_sol, x2 = bvp(0,1,0,2,100)
 y_real = real(x2)
 error = find_accuracy(y_sol,y_real)
-plot1(x2,y_sol,y_real)
+#plot1(x2,y_sol,y_real)
 plot2(x2,error)
 
 
