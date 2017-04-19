@@ -1,71 +1,83 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-#
+#!/usr/bin/env python3
 
-'''
- Solve the elliptic PDE
-    ∂_t u = D ∂_x^2 u      ,  0<x<l, t>0
-     u(x,0) = u0(x)        ,  0<x<l, t=0
-     u(0,t) = u(l,t) = 0   ,     t≥0
-'''
 import numpy as np
 import matplotlib.pyplot as plt
-import scipy
-
-##-- parameters
-D = .5**2
+from mpl_toolkits.mplot3d import Axes3D
+a = .5**2
 l = 10
-T = 1
+T = 30
+dx = .4
+dt = .2
+ld = a/dx**2*dt #lambda
+Nx = int(1+round(10/dx))
+Nt = 1 + round(T/dt)
+x_range = np.linspace(0,l,Nx)
+t_range = np.linspace(0,T,Nt)
+
+
 def u0(x):
-    # the initial condition
+    #initial conditions for when t = 0
     return np.sin(np.pi * x / l)
 
-##-- numerical paramters
-dx = .2
-dt = .005
-ld = D/dx**2*dt
-mass_total = np.array([])
-## init
-nTime = int(T/dt+.5) + 1
-nX    = int(l/dx+.5)
-## IC
-intX  = np.linspace(0,l,nX)
-intT = np.linspace(0,T,nTime)
-u     = u0(intX)
+#initialize u matrix:
+u = u0(x_range)
 
-# init plot
-#plt.ion()
-#plt.clf()
-for index in mass_total:
-    print(index)
-pltU = plt.plot(intX, u)[0]
-# deco
-plt.axis([0, l, -.1, 1.2])
-plt.xlabel(r'position $x$', fontsize=18)
-plt.ylabel('density', fontsize=18)
-theTitle = plt.title('Solution at T=' + '{:04.2f}'.format(0*dt),
-                     horizontalalignment='center', fontsize=20)
+#U_{n+1} = A.u_n
+A = np.zeros((Nx,Nx))
+#using the matrix form of our equation:
+i = np.arange(Nx)
+j = np.arange(Nx-1)
 
-##----------------------------------##
-##-------      loop         --------##
-##----------------------------------##
-for n in range(nTime):
-    ## new time step
-    u = (1-2*ld)*u + ld*(np.append(u[1:], 0) + np.append(0, u[:-1]))
-    ##trapz(intX,u)
-    ## plot
-    if (abs(u[0] - u[-1])) > 1e-14:
-        #this allows us to check whether the boundry conditions are holding
-        raise ValueError('u(0,t) =/= u(l,t) for t>=0')
-    pltU.set_ydata(u)
-    mass = 0
-    for i in u:
-        mass += i
-    mass_total = np.append(mass_total,mass)
-    theTitle.set_text('Time t=' + '{:04.2f}'.format(n*dt))
-    plt.pause(0.0001)
-plt.plot(intT,mass_total)
-plt.ylabel(r'$M(t)$')
-plt.xlabel(r'$Time$')
-plt.title(r'$Mass\/Evolution\/Over\/Time$')
-plt.savefig('mass_vs_time.png')
+A[i,i] = 1-2*ld
+A[j,j+1] = ld
+A[j+1,j] = ld
+A[0,-1] = ld
+A[-1,0] = ld
+
+step = 20  # Plot every 10 time steps
+plot_data = np.zeros((Nt//step+2, Nx))
+plt_i = 0
+masses = np.zeros(Nt)
+
+
+for t_i in range(Nt):
+    u = A.dot(u)
+    masses[t_i] = np.sum(u)  # Probably off by a scalar factor
+    if t_i % step == 0 or t_i == Nt-1:
+        plot_data[plt_i, :] = u
+        plt_i += 1
+graph = 0
+while graph < 3:
+    if graph == 0:
+        # Setup plot
+        plt.plot(t_range, masses)
+        plt.title(r'$System\/Mass\/At\/Time\/t$')
+        plt.xlabel(r'$Time$')
+        plt.ylabel(r'$Total\/mass$')
+        plt.savefig('mass_at_time_t.png')
+    if graph == 2:
+        X, Y = np.meshgrid(range(plot_data.shape[0]), range(plot_data.shape[1]))
+        Z = plot_data[X, Y]
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection="3d")
+        ax.plot_wireframe(X*dt, Y*dx, Z)
+        ax.set_xlabel(r"time $t$")
+        ax.set_ylabel(r"position $x$")
+        ax.set_zlabel(r'$u(x,t)$')
+
+
+        plt.savefig("3d.png")
+    #lets find how much the mass deviates from the initial mass:
+    if graph == 1:
+        def mass_change(m0,m):
+            return abs(m-m0)
+        change_mass = np.array([])
+        for i in range(len(masses)):
+            change_mass=np.append(change_mass,(mass_change(masses[0],masses[i])))
+        plt.plot(t_range,change_mass)
+        plt.ylim(-1,1)
+        plt.xlabel(r'$Time(s)$')
+        plt.ylabel(r'$\Delta m$')
+        plt.title(r'$Mass\/Evolution\/vs\/Time$')
+        plt.savefig('Mass_Evolution_vs_time.png')
+    graph+=1
