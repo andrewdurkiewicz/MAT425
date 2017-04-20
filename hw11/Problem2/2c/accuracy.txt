@@ -1,0 +1,6 @@
+Order Error:
+For dx = 1/10, the resulting accuracy is:  0.879133761846
+For dx = 1/30, the resulting accuracy is:  1.11005002514
+For dx = 1/70, the resulting accuracy is:  1.00479510211
+For dx = 1/200, the resulting accuracy is:  1.00946343235
+For dx = 1/550, the resulting accuracy is:  1.05517391856
